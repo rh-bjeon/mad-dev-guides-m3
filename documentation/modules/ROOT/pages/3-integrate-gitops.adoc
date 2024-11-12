@@ -28,7 +28,7 @@ GitOps에서 변경사항의 추적 가능성은 애플리케이션 소스 코�
 
 === 3.1.2 Gateway 구성 업데이트
 
-`Gateway` 구성을 업데이트하기 전에, 현재 link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[application.yaml^]의 `gateway-config` 구성맵(ConfigMap)의 데이터를 살펴봅니다.
+`Gateway` 구성을 업데이트하기 전에, `gateway-config` 구성맵(ConfigMap)의 현재 link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[application.yaml^] 데이터를 살펴봅니다.
 
 image::gateway-config.png[gateway-config]
 
