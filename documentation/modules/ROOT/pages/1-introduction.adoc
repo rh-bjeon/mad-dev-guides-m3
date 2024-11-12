@@ -12,12 +12,12 @@ image::mod-strategies-m3.png[Modernization Strategies]
 
 [IMPORTANT]
 ====
-Globex의 개발자는 이미 https://access.redhat.com/documentation/en-us/migration_toolkit_for_applications/6.0/html-single/introduction_to_the_migration_toolkit_for_applications/index[Migration Toolkit for Applications(MTA)^] 평가 및 분석 도구를 사용하여 레거시 애플리케이션(*customers*)을 Red Hat OpenShift로 현대화했습니다. 그동안 SRE 팀은 `모듈 1 과 `2` 를 통해 PostgreSQL 데이터베이스를 OpenShift로 마이그레이션하는 작업도 완료했습니다.
+Globex의 개발자는 이미 https://access.redhat.com/documentation/en-us/migration_toolkit_for_applications/6.0/html-single/introduction_to_the_migration_toolkit_for_applications/index[Migration Toolkit for Applications(MTA)^] 평가 및 분석 도구를 사용하여 레거시 애플리케이션(*customers*)을 Red Hat OpenShift로 현대화했습니다. 그동안 SRE 팀은 `모듈 1` 과 `2` 를 통해 PostgreSQL 데이터베이스를 OpenShift로 마이그레이션하는 작업도 완료했습니다.
 ====
 
 이 모듈은 다음 단계에 따라 고급 빌드 및 배포 기능을 구축하기 위한 2가지 단계(_파이프라인_, _GitOps_)를 안내합니다.
 
-* 다음의 주요 기능을 사용하여 링크:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#op-detailed-concepts[OpenShift Pipeline^]를 기반으로 지속적인 통합 및 지속적인 배포(CI/CD)를 구축합니다.
+* 다음의 주요 기능을 사용하여 link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#op-detailed-concepts[OpenShift Pipeline^]를 기반으로 지속적인 통합 및 지속적인 배포(CI/CD)를 구축합니다.
 
 ** 격리된 컨테이너에서 필요한 모든 종속성을 갖춘 파이프라인을 실행하는 서버리스 CI/CD 시스템을 빌드할 수 있도록 합니다.
 ** 분산 팀이 마이크로서비스 기반 아키텍처에서 자동화 작업을 설계할 수 있도록 허용합니다.
@@ -25,7 +25,7 @@ Globex의 개발자는 이미 https://access.redhat.com/documentation/en-us/migr
 ** Source-to-Image(S2I), Buildah, Buildpacks, Kaniko와 같은 Kubernetes 도구를 사용하여 모든 Kubernetes 플랫폼에서 이식 가능한 이미지를 빌드할 수 있습니다.
 ** OpenShift Container Platform Developer 콘솔을 사용하여 Tekton 리소스를 생성하고, 파이프라인 실행 로그를 보고, OpenShift Container Platform 네임스페이스에서 파이프라인을 관리합니다.
 
-* 링크:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#about-redhat-openshift-gitops_understanding-openshift-gitops[OpenShift GitOps (ArgoCD)^]를 사용하여 다음의 주요 기능을 갖춘 현대화된 애플리케이션을 Red Hat OpenShift에 배포합니다.
+* link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#about-redhat-openshift-gitops_understanding-openshift-gitops[OpenShift GitOps (ArgoCD)^]를 사용하여 다음의 주요 기능을 갖춘 현대화된 애플리케이션을 Red Hat OpenShift에 배포합니다.
 
 ** 클러스터가 구성, 모니터링 및 저장에 대해 유사한 상태를 갖고 있는지 확인하십시오.
 ** 여러 OpenShift Container Platform 클러스터에 구성 변경 사항을 적용하거나 되돌립니다.
