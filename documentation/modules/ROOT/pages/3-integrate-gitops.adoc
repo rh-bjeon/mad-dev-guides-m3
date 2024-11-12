@@ -64,7 +64,7 @@ image::gateway-new-configmap.png[gateway-new-configmap]
 
 == 3.2 GLOBEX 웹 페이지 다시 방문
 
-link:https://ordersfrontend-retail-%USERID%.%SUBDOMAIN%[GLOBEX web page^]에서 `Customers`로 돌아갑니다.
+link:https://ordersfrontend-retail-%USERID%.%SUBDOMAIN%[GLOBEX web page^]에서 `Customers` 로 돌아갑니다.
 
 image::frontend.png[Frontend]
 
