@@ -1,3 +1,3 @@
-* xref:1-introduction.adoc[Introduction]
-* xref:2-build-pipelines.adoc[Build CI/CD Pipelines]
-* xref:3-integrate-gitops.adoc[Integrate OpenShift GitOps]
+* xref:1-introduction.adoc[소개]
+* xref:2-build-pipelines.adoc[CI/CD 파이프라인 구축]
+* xref:3-integrate-gitops.adoc[OpenShift GitOps 통합]

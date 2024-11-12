@@ -1,42 +1,42 @@
-= 3. Integrate OpenShift GitOps - 20 minutes
+= 3. OpenShift GitOps 통합 - 20분
 :imagesdir: ../assets/images
 
-== Goals of this lab
+== 이 랩의 목표
 
-The goal is to build and deploy the modernized customer application to OpenShift using link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#about-redhat-openshift-gitops_understanding-openshift-gitops[OpenShift GitOps (ArgoCD)^].
+이 랩의 목표는 link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#about-redhat-openshift-gitops_understanding-openshift-gitops[OpenShift GitOps (ArgoCD)^]를 사용하여 OpenShift에 현대화된 고객 애플리케이션을 빌드하고 배포하는 것입니다.
 
-* Update the configuration for the *gateway* service to now point to the modernized *customers* service.
-* Demonstrate that your *frontend* service still works as before.
+* *gateway* 서비스의 구성을 업데이트하여 현대화된 *customers* 서비스로 포인터를 변경합니다.
+* *frontend* 서비스가 이전처럼 작동하는지 확인합니다.
 
-== 3.1. Sync the Gateway application in ArgoCD
+== 3.1 ArgoCD에서 Gateway 애플리케이션 동기화
 
-link:https://argoproj.github.io/cd[Argo CD^] is a declarative continuous delivery tool for Kubernetes. It can be used as a standalone tool or as a part of your CI/CD workflow to deliver needed resources to your clusters.
+link:https://argoproj.github.io/cd[Argo CD^]는 Kubernetes용 선언적 지속적 배포 도구입니다. 독립형 도구로 사용할 수도 있고 CI/CD 워크플로의 일부로 사용하여 클러스터에 필요한 리소스를 전달할 수 있습니다.
 
-In order to manage infrastructure and application configurations aligned with link:https://www.redhat.com/en/topics/devops/what-is-gitops[GitOps^], your Git repository must be the single source of truth. The desired state of your system should be versioned, expressed declaratively, and pulled automatically. This is where Argo CD comes in. 
+link:https://www.redhat.com/en/topics/devops/what-is-gitops[GitOps^]와 연계하여 인프라와 애플리케이션 구성을 관리하려면 Git 저장소가 유일한 진실의 원천(single source of truth)이어야 합니다. 시스템의 원하는 상태(desired state)는 버전 관리되어 선언적으로 표현되며 자동으로 가져와야 합니다. 바로 여기서 Argo CD가 등장합니다. 
 
-=== 3.1.1 Why OpenShift GitOps?
+=== 3.1.1 왜 OpenShift GitOps인가?
 
-`GitOps` in short is a set of practices to use *Git pull requests* to manage infrastructure and application configurations. A Git repository in GitOps is considered the only source of truth and contains the entire state of the system so that the trail of changes to the system state are visible and auditable.
+간단히 말해 `GitOps` 는 *Git pull requests* 를 사용하여 인프라와 애플리케이션 구성을 관리하는 일련의 실천법입니다. GitOps의 Git 저장소는 유일한 진실의 원천으로 간주되며, 시스템의 전체 상태를 포함하여 시스템 상태의 변경 흔적을 볼 수 있고 감사(auditable)할 수 있도록 합니다.
 
-Traceability of changes in GitOps is no novelty in itself as this approach is almost universally employed for the application source code. However GitOps advocates applying the same principles (`reviews`, `pull requests`, `tagging`, etc) to infrastructure and application configuration so that teams can benefit from the same assurance as they do for the application source code.
+GitOps에서 변경사항의 추적 가능성은 애플리케이션 소스 코드에 대해 거의 보편적으로 적용되는 접근 방식이기 때문에 새로운 것이 아닙니다. 하지만 GitOps는 동일한 원칙(`reviews`, `pull requests`, `tagging` 등)을 인프라 및 애플리케이션 구성에도 적용하여, 팀이 애플리케이션 소스 코드에서 얻는 것과 같은 확신을 받을 수 있도록 권장합니다.
 
-Although there is no precise definition or agreed upon set of rules, the following principles are an approximation of what constitutes a GitOps practice:
+정확한 정의나 합의된 규칙은 없지만, 다음 원칙들이 GitOps 관행과 유사합니다.
 
-* Declarative description of the system is stored in Git (configs, monitoring, etc)
-* Changes to the state are made via pull requests
-* Git push reconciled with the state of the running system with the state in the Git repository
+* 시스템의 선언적 설명은 Git에 저장(구성, 모니터링 등)
+* 상태 변경은 pull requests를 통해 이루어짐
+* Git push는 실행중인 시스템의 상태를 Git repository에 저장된 상태에 맞게 조정
 
-=== 3.1.2 Update the Gateway Configuration
+=== 3.1.2 Gateway 구성 업데이트
 
-Before you update the `Gateway` configuration, take a look at the current link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[application.yaml^] data of the `gateway-config` ConfigMap.
+`Gateway` 구성을 업데이트하기 전에, 현재 link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[application.yaml^]의 `gateway-config` 구성맵(ConfigMap)의 데이터를 살펴봅니다.
 
 image::gateway-config.png[gateway-config]
 
-Go back to the link:https://argocd-server-retail-%USERID%.%SUBDOMAIN%/applications/applications?view=tree&resource=&node=argoproj.io%2FApplication%2Fretail-%USERID%%2Fapplications%2F0&tab=parameters[APP DETAILS^] in the ArgoCD admin console. Click on `EDIT`.
+ArgoCD 관리 콘솔의 link:https://argocd-server-retail-%USERID%.%SUBDOMAIN%/applications/applications?view=tree&resource=&node=argoproj.io%2FApplication%2Fretail-%USERID%%2Fapplications%2F0&tab=parameters[APP DETAILS^]로 돌아가서 `EDIT` 을 클릭합니다.
 
 image::gateway-config-argo.png[gateway-config-argo]
 
-Replace `customersHost IP address` in the upper text box as shown with the following value.
+위 텍스트 상자의 `customersHost IP address` 를 다음 값으로 바꿉니다.
 
 [.console-input]
 [source,yaml]
@@ -44,37 +44,37 @@ Replace `customersHost IP address` in the upper text box as shown with the follo
 customersHost: customers
 ----
 
-Then, click `Save` and close the popup window by clicking `X` on the right top.
+그런 다음 `Save` 를 클릭하고 오른쪽 상단의 `X` 를 클릭하여 팝업 창을 닫습니다.
 
-Now you will see the `OutOfSync` status of the `gateway` application because you just only updated the ArgoCD's application parameter that is different than link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[gateway-config ConfigMap^] in the retail-%USERID% project.
+이제 `gateway` 애플리케이션의 상태가 `OutOfSync` 로 표시됩니다. 이는 ArgoCD에 애플리케이션 매개변수를 업데이트했으나 retail-%USERID% 프로젝트의 link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/configmaps/gateway-config[gateway-config ConfigMap^]과 다르기 때문입니다.
 
 image::argocd-gateway-outofsync.png[argocd-gateway-outofsync]
 
-Click on `SYNC`. Then, click on `SYNCHRONIZE` on the left popup window.
+`SYNC` 를 클릭합니다. 그런 다음 왼쪽 팝업 창에서 `SYNCHRONIZE` 를 클릭합니다.
 
 image::argocd-gateway-sync.png[argocd-gateway-sync]
 
-The application should be synced in a second.
+애플리케이션이 몇 초 안에 동기화됩니다.
 
 image::argocd-gateway-synced.png[argocd-gateway-synced]
 
-Go back to the OpenShift admin console to confirm if the `gateway-config` is updated based on the code change.
+OpenShift 관리 콘솔로 돌아가 코드 변경에 따라 `gateway-config` 가 업데이트되었는지 확인합니다.
 
 image::gateway-new-configmap.png[gateway-new-configmap]
 
-== 3.2. Revisit the GLOBEX web page
+== 3.2 GLOBEX 웹 페이지 다시 방문
 
-Let's go back to the `Customers` in the link:https://ordersfrontend-retail-%USERID%.%SUBDOMAIN%[GLOBEX web page^].
+link:https://ordersfrontend-retail-%USERID%.%SUBDOMAIN%[GLOBEX web page^]에서 `Customers`로 돌아갑니다.
 
 image::frontend.png[Frontend]
 
-== Summary
+== 요약
 
-You have now successfully deployed the new *customers* application by integrating OpenShift Pipeline and GitOps for the continuous delivery automation. You'll learn Learn how to extend an application using API management and implement an event driven architecture in `module 4 and 5`.
+이제 OpenShift Pipeline 및 GitOps를 통합하여 새로운 *customers* 애플리케이션을 지속적 배포 자동화로 배포했습니다. 모듈 4와 5에서 API 관리를 사용하여 애플리케이션을 확장하고 이벤트 기반 아키텍처를 구현하는 방법을 배우게 됩니다.
 
-== Additional Resources
+== 추가 자료
 
-* https://www.redhat.com/en/topics/application-modernization[Understanding application modernization^]
-* https://www.redhat.com/en/topics/devops/what-cicd-pipeline[Cloud-native CI/CD on OpenShift^]
-* https://www.redhat.com/en/resources/java-app-modernization-with-openshift-e-book[eBook - Plan your Java application modernization journey^]
-* https://kubebyexample.com/en/learning-paths/migrating-kubernetes/assess-and-refactor-tackle[Migrating Kubernetes Learning Path^]
+* https://www.redhat.com/en/topics/application-modernization[애플리케이션 현대화 이해^]
+* https://www.redhat.com/en/topics/devops/what-cicd-pipeline[OpenShift의 클라우드 네이티브 CI/CD^]
+* https://www.redhat.com/en/resources/java-app-modernization-with-openshift-e-book[eBook - Java 애플리케이션 현대화 여정을 계획하세요^]
+* https://kubebyexample.com/en/learning-paths/migrating-kubernetes/assess-and-refactor-tackle[쿠버네티스 마이그레이션 학습 경로^]

@@ -1,68 +1,66 @@
-= 2. Build CI/CD Pipelines - 30 minutes
+= 2. CI/CD 파이프라인 구축 - 30분
 :imagesdir: ../assets/images
 
-== Goals of this lab
+== 이 랩의 목표
 
-The goal of this exercise is to build and deploy the modernized customer application to OpenShift using link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#op-detailed-concepts[OpenShift Pipelines^]. You will accomplish this with the following steps:
+이 랩의 목표는 link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.11/html-single/cicd/index#op-detailed-concepts[OpenShift 파이프라인^]을 사용하여 현대화된 customer 애플리케이션을 OpenShift에 빌드하고 배포하는 것입니다. 다음 단계로 이를 달성할 수 있습니다:
 
-* Use the https://tekton.dev/[Tekton^] Pipeline to build and deploy the new, modernized application using Red Hat JBoss Web Server instead of Apache Tomcat as the runtime.
-* Set up the configuration for the *customers* service to connect to the new PostgreSQL database running on OpenShift.
-* Test the *customers* service.
+* https://tekton.dev/[Tekton^] 파이프라인을 사용하여 Apache Tomcat 대신 Red Hat JBoss Web Server를 런타임으로 활용하여 새로운 현대화된 애플리케이션을 빌드 및 배포합니다.
+* OpenShift에서 실행 중인 새 PostgreSQL 데이터베이스에 연결하도록 *customers* 서비스의 설정을 구성합니다.
+* *customers* 서비스를 테스트합니다.
 
-== 2.1. Update PostgreSQL DBMS Connection using Helm
+== 2.1. Helm을 사용하여 PostgreSQL DBMS 연결 업데이트하기
 
-=== 2.1.1. Why OpenShift with Helm?
+=== 2.1.1. 왜 OpenShift와 Helm을 사용하는가?
 
-https://docs.openshift.com/container-platform/4.10/applications/working_with_helm_charts/understanding-helm.html[Helm^] is a package and install manager that standardizes and simplifies packaging and deployment of containerized applications with Kubernetes, anywhere in the hybrid cloud. Helm lets developers package their applications so that they can be easily shared and deployed by anyone in their organization and beyond.
+https://docs.openshift.com/container-platform/4.10/applications/working_with_helm_charts/understanding-helm.html[Helm^]은 Kubernetes에서 컨테이너화된 애플리케이션의 패키징과 배포를 표준화하고 단순화하는 패키지 및 설치 관리자입니다. 이를 통해 개발자는 애플리케이션을 패키지화하여 조직 내외의 누구나 쉽게 공유하고 배포할 수 있게 합니다.
 
-Helm can also be used to automate *day-1* tasks like installation and basic configuration management for setting up the applications, and some *day-2* operations like performing some simple upgrades and rollbacks.
+Helm은 애플리케이션 설치 및 기본 구성 관리를 자동화하는 *day-1* 작업뿐만 아니라, 간단한 업그레이드 및 롤백을 수행하는 일부 *day-2* 작업에도 사용할 수 있습니다.
 
-=== 2.1.2. Update the Helm Chart for a new JDBC configuration
+=== 2.1.2. 새로운 JDBC 설정을 위한 Helm 차트 업데이트
 
-The *customers* application in the OpenShift cluster currently has a connection failure because the application still tries to connect to the PostgreSQL database running on the legacy virtulization infrastructure. To fix the issue, you need to update the *JDBC* configuration that points to the migrated PostgreSQL database on OpenShift.
+현재 OpenShift 클러스터의 *customers* 애플리케이션은 레거시 가상화 인프라에서 실행 중인 PostgreSQL 데이터베이스에 연결하려고 시도하고 있어 연결 실패가 발생합니다. 문제를 해결하려면 OpenShift에 마이그레이션된 PostgreSQL 데이터베이스를 가리키도록 *JDBC* 설정을 업데이트해야 합니다.
 
-The JDBC configuration is currently managed by the _Helm chart_ to automate day 1 & 2 operations for the modernized Globex retail system. Let's go back to the link:https://codeserver-codeserver-%USERID%.%SUBDOMAIN%[VS Code server^] and explore the *helm/customer-tomcat-gitops* directory.
+현재 JDBC 설정은 현대화된 Globex 소매 시스템의 Day 1 및 2 작업을 자동화하기 위해 _Helm 차트_ 로 관리됩니다. link:https://codeserver-codeserver-%USERID%.%SUBDOMAIN%[VS Code 서버^]로 돌아가서 *helm/customer-tomcat-gitops* 디렉터리를 확인하세요.
 
-Take a look at `secret/persistence.properties` file to understand how the Helm chart allows you to define the JDBC configuration.
+JDBC 구성을 정의할 수 있도록 Helm 차트가 어떻게 설정되는지 이해하기 위해 `secret/persistence.properties` 파일을 살펴보세요.
 
 image::gitops-persistence.png[gitops-persistence]
 
 [NOTE]
 ====
-The best developer practice for updating the *JDBC configuration* is that you change the configurations locally in VS Code server. Then, when you commit and push the changes to your Gitea repository, it will trigger the `OpenShift pipeline and GitOps` to automatically update OpenShift `ConfigMap` and `Secret` objects.
+*JDBC 설정* 업데이트에 대한 최선의 개발자 실천 방법은 VS Code 서버에서 로컬로 설정을 변경한 후, Gitea 리포지토리에 변경사항을 커밋하고 푸시하는 것입니다. 그러면 `OpenShift pipeline과 GitOps` 가 자동으로 OpenShift의 `ConfigMap` 및 `Secret` 객체를 업데이트합니다.
+link:https://argocd-server-retail-%USERID%.%SUBDOMAIN%[ArgoCD 웹 콘솔^]에 접속하세요. `LOG IN VIA OPENSHIFT`를 클릭합니다.
 ====
-
-Access link:https://argocd-server-retail-%USERID%.%SUBDOMAIN%[ArgoCD web console^]. Click on `LOG IN VIA OPENSHIFT`:
 
 image::argocd-login.png[argocd-login]
 
-Use the following credentials if you haven't logged in to the OpenShift cluster before. OpenShift is already integrated with https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign On^].
+이전에 OpenShift 클러스터에 로그인하지 않은 경우 다음 자격 증명을 사용하여 로그인합니다. OpenShift는 이미 https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign On^]과 통합되어 있습니다.
 
 image::sso_login.png[openshift_login]
 
-* Login using your credentials:
+* 다음 자격증명으로 로그인하세요:
 
-** Username: `%USERID%`
-** Password: `{openshift-password}`
+** 사용자 이름: %USERID% 
+** 비밀번호: {openshift-password}
 
-* Click on *Allow selected permissions*
+* *Allow selected permissions* 을 클릭합니다.
 
 image::argo_authorize.png[openshift_login]
 
-
-You will see that the `customers-tomcat-gitops` status is *Progressing* because the application still refers to the old database hostname (e.g.*postgresql-db-database*).
+이제 `customers-tomcat-gitops` 의 상태가 *Progressing* 임을 확인할 수 있습니다. 애플리케이션이 아직 이전 데이터베이스의 호스트 이름(예: *postgresql-db-database*)을 참조하고 있기 때문입니다.
 
 image::argocd-application-degrade.png[argocd-application-degrade]
 
-Click on `applications`.
+`applications` 를 클릭하세요.
 
 image::argocd-application-click-applications.png[argocd-application-click-applications]
 
-Click on `APP DETAILS` to show the detail page for the application. Then, switch to `PARAMETER` tab and click on `EDIT`.
+애플리케이션의 상세 페이지를 표시하려면 `APP DETAILS` 를 클릭합니다. 그런 다음 `PARAMETER` 탭으로 전환하고 `EDIT` 을 클릭합니다.
 
 image::argocd-application-details.png[argocd-application-details]
 
-Replace keys and values of `customerDatabase` with the following data that refer to the PostgreSQL virtual machine on Red Hat OpenShift. It should look like this:
+`customerDatabase` 의 키와 값을 Red Hat OpenShift 상의 PostgreSQL 가상머신을 참조하는 아래의 데이터로 교체합니다. 다음과 같아야 합니다:
 
 * customerDatabase.hostname: `postgresql-customer`
 * customerDatabase.password: `customer`
@@ -72,97 +70,94 @@ image::argocd-application-update.png[argocd-application-update]
 
 [NOTE]
 ====
-You probably see *user1* in the _user_ field at the bottom. The value won't be rendered to the _customers_ application by ArgoCD because it's the default value. You can see the actual value along with your username in the *VALUES* section. 
+하단의 _user_ 필드에 *user1* 이 표시될 수 있습니다. 이 값은 기본값이기 때문에 ArgoCD가 _customers_ 애플리케이션에 렌더링하지 않습니다. *VALUES* 섹션에서 당신의 유저 이름과 함께 실제 값을 확인할 수 있습니다.
 ====
 
-Click on `SAVE`, then close the popup window by clicking `X` on at the top right corner.
+`SAVE` 를 클릭한 다음 오른쪽 상단의 `X` 를 클릭하여 팝업 창을 닫습니다.
 
-Now you will see the `OutOfSync` status of the `customers-tomcat-gitops` application because you just updated the application object, and it's now different from what's deployed (hence OutOfSync).
+이제 application 객체를 업데이트했으므로 `customers-tomcat-gitops` 애플리케이션의 상태가 `OutOfSync` 로 표시됩니다.
 
 image::argocd-application-outofsync.png[argocd-application-outofsync]
 
-Click on `SYNC`. Then, click on `SYNCHRONIZE` on the left popup window.
+`SYNC` 를 클릭한 다음, 왼쪽 팝업 창에서 `SYNCHRONIZE` 를 클릭합니다.
 
-image::argocd-application-sync.png[argocd-application-sync]
-
-It will take a few moments to synchronize the application. Wait for it to finish and show:
+애플리케이션을 동기화하는 데 몇 초가 걸립니다. 완료되면 다음과 같이 표시됩니다:
 
 image::argocd-application-synced.png[argocd-application-synced]
 
-Click to go back to the OpenShift web console and look at the link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/secrets/customers-secret[customers-secret^]. 
+OpenShift 웹 콘솔로 돌아가서 link:https://console-openshift-console.%SUBDOMAIN%/k8s/ns/retail-%USERID%/secrets/customers-secret[customers-secret^]을 확인하세요.
 
 image::argocd-application-secret-reveral.png[argocd-application-secret-reveral]
 
-And Click on `Reveral values` to see the updated the JDBC configuration values.
+`Reveral values` 를 클릭하여 업데이트된 JDBC 설정 값을 확인합니다.
 
 image::argocd-application-secret.png[argocd-application-secret]
 
-== 2.2. Run OpenShift Pipelines
+== 2.2. OpenShift Pipelines 실행
 
-=== 2.2.1 Why OpenShift Pipelines?
+=== 2.2.1. 왜 OpenShift Pipelines인가?
 
-OpenShift Pipelines provides a *kubernetes-native CI/CD* framework based on https://tekton.dev[Tekton^] to design and run your pipelines, and is designed to run each step of the CI/CD pipeline in its own container, allowing each step to scale independently to meet the demands of the pipeline.
+OpenShift 파이프라인은 https://tekton.dev[Tekton^]에 기반한 *kubernetes 네이티브 CI/CD* 프레임워크를 제공하여 파이프라인을 설계하고 실행하며, CI/CD 파이프라인의 각 단계를 자체 컨테이너에서 실행하여, 이를 통해 파이프라인의 각 단계가 독립적으로 확장하여 파이프라인의 요구 사항을 충족할 수 있습니다.
 
-By extending Kubernetes/OpenShift with Custom Resource Definitions (CRDs), OpenShift Pipelines makes CI/CD concepts such as `pipeline`, `task`, and `step` natively in terms of increasing the scalability, security, ease of deployment capabilities of Kubernetes.
+CI/CD 개념(`pipeline`, `task`, `step` 등)을 Kubernetes/OpenShift의 사용자 정의 리소스 정의(CRD)로 확장함으로써 OpenShift 파이프라인은 Kubernetes의 확장성, 보안성, 배포 용이성을 증가시킵니다.
 
 image::tekton-concept.png[tekton-concept]
 
-The pipeline executes _tasks_ across a number of defined _steps_. There are tasks you will use that each have a single purpose:
+파이프라인은 여러 단계로 구성된 _task_ 를 실행합니다. 각 _tasks_ 들은 단일 목적을 가지고 있니다.
 
-* *Clone Repository* downloads the source code from the target Git repository.
-* *Build from Source* builds the application artifact from source code. This task has been tweaked to allow selecting the target subdirectory from the repository in which the target application source is available, allowing you to have several application/components available in a single repository. *This way of versioning different services/components is highly discouraged*, as the optimal approach would be to have a dedicated repository for each component since their lifecycle should be independent. Nevertheless, this choice was made to gather all demo materials on a single repository for simplicity purposes.
-* *Build Image* uses a Dockerfile packaged present in an application to build an image and push it to the target registry. The image will be tagged with the short commit hash of the source it contains.
-* *Update Manifest* uses the short commit hash tag to update the application manifest in Git and point to the newly built image. Application deployment is then delegated to ArgoCD, which is continuously polling the configuration repository for changes and creates/updates all OpenShift objects accordingly.
+* *Clone Repository* 는 타겟 Git Repository에서 소스 코드를 다운로드합니다. 
+* *Build from Source* 는 소스 코드에서 애플리케이션 아티팩트를 빌드합니다. 이 task에서는 Git Repository의 하위 디렉토리를 선택할 수 있기 때문에, 단일 Git Repository에서 여러 애플리케이션/구성 요소를 사용할 수 있습니다. *그러나 이런 방식으로 다양한 서비스/구성요소의 버전을 관리하는 것은 권장되지 않습니다.* 최적의 접근 방식은 각 구성요소의 라이프사이클을 독립적으로 관리하기 위해 각 구성요소에 대한 전용 Git Repository를 갖는 것입니다. 이 랩에서는 단순화를 위해 모든 예시용 자료를 하나의 저장소에 모으기로 결정했습니다.
+* *Build Image* 는 애플리케이션에 있는 Dockerfile을 사용하여 이미지를 빌드하고 타겟 레지스트리에 이미지를 푸시합니다. 이미지에는 포함된 소스의 short commit hash가 태그로 지정됩니다.  
+* *Update Manifest* 는 short commit hash 태그를 사용하여 Git에서 애플리케이션 매니페스트를 업데이트하고 새로 빌드된 이미지를 가리킵니다.그런 다음 애플리케이션의 배포가 ArgoCD에 위임되고, ArgoCD는 변경사항에 대해 구성 저장소(configuration repository)를 지속적으로 폴링(polling)하고 모든 OpenShift 객체를 그에 따라 생성/업데이트합니다. 
 
-The pipeline accepts the following parameters:
+파이프라인은 다음 매개변수를 허용합니다. 
 
-* *git-url*: URL of the target Git repository.
-* *git-branch*: target branch to work with. (default: _main_)
-* *app-subdir*: Subdirectory from the repository in which the application source code is stored.
-* *target-namespace*: Namespace/project in which to deploy the application.
-* *target-registry*: Registry to push the built image to. (default: _image-registry.openshift-image-registry.svc:5000_, i.e. the internal OpenShift container registry)
+* *git-url*: 타겟 Git Repository의 URL입니다. 
+* *git-branch*: 작업할 타겟 브랜치입니다.(기본값: _main_ ) 
+* *app-subdir*: 애플리케이션 소스 코드가 저장된 Git Repository의 하위 디렉토리입니다. 
+* *target-namespace*: 애플리케이션을 배포할 네임스페이스/프로젝트입니다. 
+* *target-registry*: 빌드된 이미지를 푸시할 레지스트리입니다. (기본값: _image-registry.openshift-image-registry.svc:5000_, 즉 OpenShift의 내부 컨테이너 레지스트리)
 
-=== 2.2.2 Execute the Customers Pipelines
+=== 2.2.2 고객 파이프라인 실행 
 
-It is possible to configure webhooks and event listeners/triggers to automatically execute pipelines when source code commits are made.
+소스 코드가 커밋되면 자동으로 파이프라인을 실행하도록 웹훅(webhooks)과 이벤트 리스너/트리거(event listeners/triggers)를 구성할 수 있습니다. 
 
-For simplicity in this exercise, you will trigger the pipeline run manually.
+이 실습에서는 단순화를 위해 파이프라인 실행을 수동으로 트리거합니다. 
 
-Open a new browser to access the link:https://console-openshift-console.%SUBDOMAIN%/dev-pipelines/ns/cicd-%USERID%[OpenShift Pipeline^].
+새 브라우저를 열어 link:https://console-openshift-console.%SUBDOMAIN%/dev-pipelines/ns/cicd-%USERID%[OpenShift Pipeline^]에 액세스합니다.
 
+그러면 _Developer perspective_ 에서 `cicd-%USERID%` 프로젝트에 미리 정의된 `java-deployment` 파이프라인이 표시됩니다. 
 
-Then, you will see a pre-defined `java-deployment` pipeline in the `cicd-%USERID%` project in the _Developer perspective_.
+파이프라인을 클릭합니다. 
 
-Click on the pipeline.
+image::ama-pipeline.png[ama-pipeline] 
 
-image::ama-pipeline.png[ama-pipeline]
+파이프라인을 실행하려면 *Actions* 드롭다운에서 `Start` 를 클릭합니다. 
 
-Click on `Start` in *Actions* dropdown to run the pipeline.
+image::ama-pipeline-start.png[ama-pipeline-start] 
 
-image::ama-pipeline-start.png[ama-pipeline-start]
+*PipelineRun* 은 파이프라인의 단일 실행을 나타내며, 특정 호출에 사용될 소스코드 및 이미지 리소스와 연결됩니다.
 
-A *PipelineRun* represents a single run of the pipeline, tied to the source code and image resources that should be used for this specific invocation.
+이 대화 상자에서 _build-artifact_ 단계의 소스코드 저장소와 _update-manifest-and-push_ 단계에서 배포할 타겟 네임스페이스의 최종 값을 바인딩할 수 있습니다. workspaces 섹션을 다음 값으로 업데이트한 후 *Start* 를 클릭합니다. 
 
-This dialog box is where you bind the final target values for the source repo of the _build-artifact_ step, and the target namespace to deploy in the _update-manifest-and-push_ step. Update the workspaces section using the following values, and then click *Start*.
+[참고] 
+==== 
+`git-url, git-branch, app-subdir, target-namespace 및 target-registry` 와 같은 다른 key에 대한 기본값은 그대로 둡니다. 
+==== 
 
-[NOTE]
-====
-Leave default values for the other keys such as `git-url, git-branch, app-subdir, target-namespace, and target-registry`.
-====
+* ws: `customers-pvc` in *PersistentVolumeClaim* 
 
-* ws: `customers-pvc` in *PersistentVolumeClaim*
+image::ama-pipeline-start-popup.png[ama-pipeline-start-popup] 
 
-image::ama-pipeline-start-popup.png[ama-pipeline-start-popup]
+*java-deployment-pipeline* 파이프라인을 시작하면 _pipelinerun_ 이 인스턴스화되고 파이프라인에 정의된 작업을 실행하기 위해 파드가 생성됩니다. 몇 분 후 파이프라인이 성공적으로 완료됩니다. 각 단계 위로 마우스를 올려서 진행 상황의 간단한 스냅샷을 보거나, 단계를 클릭하여 자세한 로그를 확인할 수 있습니다.
 
-As soon as you start the *java-deployment-pipeline* pipeline, a _pipelinerun_ is instantiated and pods are created to execute the tasks that are defined in the pipeline. After a few minutes, the pipeline should finish successfully. You can hover over the steps to get a quick snapshot of the step’s progress, or click on the steps to see detailed logs of the steps.
+image::ama-pipeline-complete.png[ama-pipeline-complete] 
 
-image::ama-pipeline-complete.png[ama-pipeline-complete]
+=== 2.2.3 더 나은 Topology View를 위한 레이블 추가 
 
-=== 2.2.3 Add Labels for better Topology View
+Globex 리테일 시스템은 OpenShift 클러스터에 여러 마이크로서비스를 배포했습니다. 각 마이크로서비스는 다른 마이크로서비스 및 데이터베이스와 복잡한 관계를 가지고 있습니다. 이 아키텍처는 개발자 및 SRE에게 즉시 이해되지 않을 수 있습니다. 다행히 OpenShift 개발자 콘솔은 유용한 레이블과 주석이 포함된 직관적인 `Topology View` 를 제공합니다. 이러한 레이블은 같은 네임스페이스에 배포된 애플리케이션 간의 명시적인 관계를 상세하게 나타냅니다.
 
-The Globex retail system has deployed multiple microservices to the OpenShift cluster. Each microservices has complex relations with the other microservices and databases. This architecture might not be immediately understandable for developers and SREs. Fortunately the OpenShift developer console provides an intuitive `topology` view with helpful labels and annotations. These labels detail the explicit relations among deployed applications in the same namespace.
-
-Run the following commands to add labels and annotations to each deployment to show which _languages_, _frameworks_, and _runtimes_ are used for each application:
+각 애플리케이션에 사용된 _언어_, _프레임워크_ 및 _런타임_을 표시하기 위해 각 배포에 레이블과 주석을 추가하려면 다음 명령을 실행하세요:
 
 [.console-input]
 [source,bash]
@@ -184,19 +179,20 @@ oc annotate deployment/gateway app.openshift.io/connects-to='["inventory","order
 ----
 
 [NOTE]
-====
-You might have no connection between `gateway` and `customers`. In that case, you can add the connection by dragging an arrow from `gateway` to `customers` _Dev Console_. This is a visual cue that the two are tied together.
-====
+==== 
+`gateway` 와 `customers` 사이에 연결이 없을 수 있습니다. 이 경우 `gateway`에서 `customers` _Dev Console_ 로 화살표를 드래그하여 연결을 추가할 수 있습니다. 이는 두 개가 서로 연결되어 있음을 나타내는 시각적 단서입니다.
+==== 
 
-Next, go back to the link:https://console-openshift-console.%SUBDOMAIN%/topology/ns/retail-%USERID%?view=graph[Topology View^] in `retail-%USERID%` project at Developer perspective, the applications deployment should appear as follows:
+다음으로, retail-%USERID% 프로젝트의 _Developer perspective_ 에서 토폴로지 보기로 이동하면 애플리케이션 배포가 다음과 같이 표시됩니다:
 
-image::app-topology.png[app-topology]
+다음으로, Developer perspective에서 `retail-%USERID%` 프로젝트의 link:https://console-openshift-console.%SUBDOMAIN%/topology/ns/retail-%USERID%?view=graph[Topology View^]로 돌아가면 애플리케이션 배포가 다음과 같이 표시됩니다:
 
-== Congratulations!
+image::app-topology.png[app-topology] 
 
-You have built and deployed the modernized customer application to OpenShift using a CI/CD pipeline and connected the customer microservice to the new PostgreSQL database running with OpenShift Virtualization.
+== 축하합니다!
 
-In the next step you will first update the `gateway` to connect to the new `customers` service using dynamic discovery (vs. static IP address).
+CI/CD 파이프라인을 사용하여 OpenShift에 현대화된 customer 애플리케이션을 구축하고 배포했으며, OpenShift Virtualization에서 실행 중인 새로운 PostgreSQL 데이터베이스에 customers 마이크로서비스를 연결했습니다.
 
-Next, you will integrate the app with OpenShift GitOps, enabling declarative description of an application's components, and automatic synchronization of the deployed application. This is critical to
-improving how software is delivered, minimizing the chance for configuration drift and enabling better auditability over time. Let's go!
+다음 단계에서는 `gateway`를 업데이트하여 정적 IP주소 대신 동적 검색(dynamic discovery)을 사용해 새로운 `customers` 서비스에 연결합니다.
+
+이후 애플리케이션을 OpenShift GitOps와 통합하여 애플리케이션 구성 요소를 선언적으로 설명하고 배포된 애플리케이션을 자동으로 동기화합니다. 이는 소프트웨어 제공 방식을 개선하고 구성 불일치(configuration drift) 가능성을 최소화하며 장기적으로 더 나은 감사(auditability) 기능을 제공합니다. 시작해 봅시다!
